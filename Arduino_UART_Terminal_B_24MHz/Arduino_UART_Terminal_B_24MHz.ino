@@ -2,7 +2,7 @@
 // *****                                                                 *****
 // ***** AtMega328P UART ANSI Terminal with 60x25 Character VGA and PS/2 *****
 // *****                                                                 *****
-// *****        written by Carsten Herting 23.04.2021 Version 2.1        *****
+// *****        written by Carsten Herting 02.06.2021 Version 2.2        *****
 // *****                                                                 *****
 // ***************************************************************************
 // Set AtMega328P FuseA from 0xFF to 0xF0 to enable external TTL clock
@@ -19,10 +19,10 @@
 #define WIDTH     60
 #define HEIGHT    25
 
-byte row = 0, col = 0;            // current cursor position in terminal window
+char row = 0, col = 0;            // current cursor position in terminal window
 volatile int vline = 0;           // current vertical position of pixel video output
 volatile byte vram[HEIGHT][WIDTH];// array of VideoRAM
-volatile byte start = 0;          // start line of the VideoRAM (thus avoiding moving data while scrolling)
+volatile char start = 0;          // start line of the VideoRAM (thus avoiding moving data while scrolling)
 volatile int frames = 0;          // 1/60s frame counter for cursor blinking
 volatile byte regout = 0;         // index of current output position in queue
 volatile byte regin = 0;          // index of current input position in queue
@@ -115,7 +115,7 @@ void ProcessChar(byte inbyte)                    // processes a character (accep
   static byte escvalid = 0;                // Number of valid characters in escbuffer[]
   static byte escbuffer[5] = { 0,0,0,0,0 };
 
-  frames = 25;                                   // make cursor invisible for a very short time after receiving a character
+  frames = 30;                                   // make cursor invisible for a very short time after receiving a character
 
   if (escvalid > 4) escvalid = 0;                // unverarbeitbare ESC-Sequenzen löschen und dieses Zeichen normal verarbeiten
   if (inbyte == 27) { escvalid = 1; return; }    // neue ESC sequence starten
@@ -132,10 +132,20 @@ void ProcessChar(byte inbyte)                    // processes a character (accep
       escbuffer[escvalid++] = inbyte;            // ein weiteres Zeichen hinzufügen
       switch (inbyte)                            // Für jede ESC sequence muss geprüft werden, ob damit der Befehl komplett ist
       {
+        case 'S':
+          memset((void*)&vram[start][0], 32, WIDTH);
+          start++; if (start > HEIGHT-1) start = 0;
+          row++; if (row > HEIGHT-1) row = 0;
+          break;
+        case 'T':
+          start--; if (start < 0) start = HEIGHT-1;
+          row--; if (row < 0) row = HEIGHT-1;
+          memset((void*)&vram[start][0], 32, WIDTH);
+          break;
         case 'A':                                // move cursor up
         {
           byte anz;
-          if (escvalid == 5) { anz = (escbuffer[2] - 48) << 1; anz += (anz << 2) + escbuffer[3] - 48; }
+          if (escvalid > 4) { anz = (escbuffer[2] - 48) << 1; anz += (anz << 2) + escbuffer[3] - 48; }
           else if (escvalid == 4) anz = escbuffer[2] - 48; else anz = 1;
           for (byte i = 0; i < anz; i++) if (row != start) { row--; if (row < 0) row = HEIGHT-1; }
           escvalid = 0; break;
@@ -143,7 +153,7 @@ void ProcessChar(byte inbyte)                    // processes a character (accep
         case 'B':                                // move cursor down
         {
           byte anz;
-          if (escvalid == 5) { anz = (escbuffer[2] - 48) << 1; anz += (anz << 2) + escbuffer[3] - 48; }
+          if (escvalid > 4) { anz = (escbuffer[2] - 48) << 1; anz += (anz << 2) + escbuffer[3] - 48; }
           else if (escvalid == 4) anz = escbuffer[2] - 48; else anz = 1;
           for (byte i = 0; i < anz; i++) { byte oldrow = row; row++; if (row > HEIGHT-1) row = 0; if (row == start) row = oldrow; }
           escvalid = 0; break;
@@ -151,7 +161,7 @@ void ProcessChar(byte inbyte)                    // processes a character (accep
         case 'C':                                // move cursor right
         {
           byte anz;
-          if (escvalid == 5) { anz = (escbuffer[2] - 48) << 1; anz += (anz << 2) + escbuffer[3] - 48; }
+          if (escvalid > 4) { anz = (escbuffer[2] - 48) << 1; anz += (anz << 2) + escbuffer[3] - 48; }
           else if (escvalid == 4) anz = escbuffer[2] - 48; else anz = 1;
           for (byte i = 0; i < anz; i++) if (col < WIDTH-1) col++;
           escvalid = 0; break;
@@ -159,7 +169,7 @@ void ProcessChar(byte inbyte)                    // processes a character (accep
         case 'D':                                // move cursor left
         {
           byte anz;
-          if (escvalid == 5) { anz = (escbuffer[2] - 48) << 1; anz += (anz << 2) + escbuffer[3] - 48; }
+          if (escvalid > 4) { anz = (escbuffer[2] - 48) << 1; anz += (anz << 2) + escbuffer[3] - 48; }
           else if (escvalid == 4) anz = escbuffer[2] - 48; else anz = 1;
           for (byte i = 0; i < anz; i++) if (col > 0) col--;
           escvalid = 0; break;
@@ -167,7 +177,7 @@ void ProcessChar(byte inbyte)                    // processes a character (accep
         case 'G':                                // move cursor to an absolute x position (left border: 1)
         {
           byte anz;
-          if (escvalid == 5) { anz = (escbuffer[2] - 48) << 1; col = min(WIDTH-1, max(0, (anz << 2) + anz + escbuffer[3] - 48 - 1)); }
+          if (escvalid > 4) { anz = (escbuffer[2] - 48) << 1; col = min(WIDTH-1, max(0, (anz << 2) + anz + escbuffer[3] - 48 - 1)); }
           else if (escvalid == 4) { col = min(WIDTH-1, max(0, escbuffer[2] - 48 - 1)); }
           else col = 0;
           escvalid = 0; break;
@@ -175,7 +185,7 @@ void ProcessChar(byte inbyte)                    // processes a character (accep
         case 'd':                                // move cursor to an absolute x position (left border: 1)
         {
           byte anz;
-          if (escvalid == 5)
+          if (escvalid > 4)
           {
             anz = (escbuffer[2] - 48) << 1;
             row = start + min(HEIGHT-1, max(0, (anz << 2) + anz + escbuffer[3] - 48 - 1));
@@ -211,16 +221,12 @@ void ProcessChar(byte inbyte)                    // processes a character (accep
   {
     switch (inbyte)
     {
+      case '\r': col = 0; break;                // Sonderzeichen 'carriage return' abfangen        
       case '\n':                                 // Sonderzeichen 'newline' abfangen
         col = 0;
         if (row < HEIGHT-1) row++; else row=0;
         if (row == start) { memset((void*)&vram[row][0], 32, WIDTH); start++; if (start > HEIGHT-1) start = 0; }
         break;
-      case '\r': col = 0; break;                // Sonderzeichen 'carriage return' abfangen        
-      case 17: if (row != start) { if (row > 0 ) row--; else row = HEIGHT-1; } break;      // move cursor up
-      case 18: { byte oldrow = row; row++; if (row > HEIGHT-1) row = 0; if (row == start) row = oldrow; } break;     // move cursor down
-      case 19: if (col > 0) col--; break;       // move cursor left
-      case 20: if (col < WIDTH-1) col++; break;      // move cursor right
       case 8:                                   // Sonderzeichen 'BACKSPACE' abfangen
         if (col > 0) vram[row][--col] = 32;
         else if (row != start) { if (row > 0) row--; else row = HEIGHT-1; vram[row][WIDTH-1] = 32; col = WIDTH-1; }

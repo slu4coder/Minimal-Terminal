@@ -1,7 +1,8 @@
 /**************************************************************************************
   *****                                                                           *****
   ***** Atmega328P UART & PS/2 Terminal Interface written by Carsten Herting 2021 *****
-  *****                                                                           *****
+  *****                   Version 2.2, last update: 02.06.2021                    *****
+  *****                                                                           *****                                                                           
   *************************************************************************************
   This Atmega328P reads serial data from it's UART RX and transfers it to the 2nd
   ATmega328P handling VGA. PS/2 data is converted into ASCII and sent away via UART TX.
@@ -16,20 +17,24 @@
 */
 
 volatile byte ps2_scan = 0;                     // holds valid PS/2 scancode (set this to 0 after processing!)
-const byte LookupScanToASCII[3][128] PROGMEM =  // lookup table (in: SHIFT/ALTGR keystate and PS/2 scancode, out: ASCII code)
+const byte LookupScanToASCII[4][128] PROGMEM =  // lookup table (in: SHIFT/ALTGR/CTRL keystate and PS/2 scancode, out: ASCII code)
 { 
-  { 0,0,0,0,0,0,0,0,         0,0,0,0,0,9,94,0,         0,0,0,0,0,113,49,0,       0,0,121,115,97,119,50,0,     // w/o SHIFT or ALT(GR)
-    0,99,120,100,101,52,51,0,0,32,118,102,116,114,53,0,0,110,98,104,103,122,54,0,0,0,109,106,117,55,56,0,
-    0,44,107,105,111,48,57,0,0,46,45,108,0,112,0,0,    0,0,0,0,0,96,0,0,         0,0,10,43,0,35,0,0,
-    0,60,0,0,0,0,8,0,        0,0,0,19,0,0,0,0,         0,0,18,0,20,17,27,0,      0,0,0,0,0,0,0,0          },
-  { 0,0,0,0,0,0,0,0,         0,0,0,0,0,0,248,0,        0,0,0,0,0,81,33,0,        0,0,89,83,65,87,34,0,        // with SHIFT
-    0,67,88,68,69,36,0,0,    0,0,86,70,84,82,37,0,     0,78,66,72,71,90,38,0,    0,0,77,74,85,47,40,0,
-    0,59,75,73,79,61,41,0,   0,58,95,76,0,80,63,0,     0,0,0,0,0,0,0,0,          0,0,0,42,0,39,0,0,
-    0,62,0,0,0,0,0,0,        0,0,0,0,0,0,0,0,          0,0,0,0,0,0,0,0,          0,0,0,0,0,0,0,0          },
-  { 0,0,0,0,0,0,0,0,         0,0,0,0,0,0,0,0,          0,0,0,0,0,64,0,0,         0,0,0,0,0,0,0,0,             // with ALT(GR)
-    0,0,0,0,0,0,0,0,         0,0,0,0,0,0,0,0,          0,0,0,0,0,0,0,0,          0,0,0,0,0,123,91,0,
-    0,0,0,0,0,125,93,0,      0,0,0,0,0,0,92,0,         0,0,0,0,0,0,0,0,          0,0,0,126,0,0,0,0,
-    0,124,0,0,0,0,0,0,       0,0,0,0,0,0,0,0,          0,0,0,0,0,0,0,0,          0,0,0,0,0,0,0,0          }
+  { 0,0,0,0,0,0,0,0,          0,0,0,0,0,0,94,0,           0,0,0,0,0,113,49,0,         0,0,121,115,97,119,50,0,     // plain key
+    0,99,120,100,101,52,51,0, 0,32,118,102,116,114,53,0,  0,110,98,104,103,122,54,0,  0,0,109,106,117,55,56,0,
+    0,44,107,105,111,48,57,0, 0,46,45,108,0,112,0,0,      0,0,0,0,0,96,0,0,           0,0,10,43,0,35,0,0,
+    0,60,0,0,0,0,8,0,         0,0,0,0,0,0,0,0,            0,127,0,0,0,0,27,0,         0,0,0,0,0,0,0,0          },
+  { 0,0,0,0,0,0,0,0,          0,0,0,0,0,0,248,0,          0,0,0,0,0,81,33,0,          0,0,89,83,65,87,34,0,        // with SHIFT
+    0,67,88,68,69,36,0,0,     0,0,86,70,84,82,37,0,       0,78,66,72,71,90,38,0,      0,0,77,74,85,47,40,0,
+    0,59,75,73,79,61,41,0,    0,58,95,76,0,80,63,0,       0,0,0,0,0,0,0,0,            0,0,0,42,0,39,0,0,
+    0,62,0,0,0,0,0,0,         0,0,0,0,0,0,0,0,            0,0,0,0,0,0,0,0,            0,0,0,0,0,0,0,0          },
+  { 0,0,0,0,0,0,0,0,          0,0,0,0,0,0,0,0,            0,0,0,0,0,64,0,0,           0,0,0,0,0,0,0,0,             // with ALT(GR)
+    0,0,0,0,0,0,0,0,          0,0,0,0,0,0,0,0,            0,0,0,0,0,0,0,0,            0,0,0,0,0,123,91,0,
+    0,0,0,0,0,125,93,0,       0,0,0,0,0,0,92,0,           0,0,0,0,0,0,0,0,            0,0,0,126,0,0,0,0,
+    0,124,0,0,0,0,0,0,        0,0,0,0,0,0,0,0,            0,0,0,0,0,0,0,0,            0,0,0,0,0,0,0,0          },
+  { 0,0,0,0,0,0,0,0,          0,0,0,0,0,0,0,0,            0,0,0,0,0,0x11,0,0,         0,0,0,0x13,0x01,0,0,0,             // with CTRL(Strg)
+    0,0x03,0x18,0,0,0,0,0,    0,0,0x16,0,0,0,0,0,         0,0x0e,0,0,0,0x1a,0,0,      0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,          0,0,0,0x0c,0,0,0,0,         0,0,0,0,0,0,0,0,            0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,          0,0,0,0,0,0,0,0,            0,0,0,0,0,0,0,0,            0,0,0,0,0,0,0,0          }
 };
   
 void setup()
@@ -63,24 +68,43 @@ void loop()
   if (ps2_scan != 0)                           // check for PS2 input
   {    
     byte scan = ps2_scan; ps2_scan = 0;        // take the PS2 scan result and clear it
-    static bool alt = false;                   // state of some important keys of the PS2 keyboard
-    static bool shift = false;
+    static bool ALT = false;                   // state of some important keys of the PS2 keyboard
+    static bool SHIFT = false;
+    static bool CTRL = false;
     static bool released = false;              // indicating that the next key counts as 'released'
-
     switch (scan)
     {
-      case 17: alt = !released; released = false; break;             // ALT, ALTGR
-      case 18: case 89: shift = !released; released = false; break;  // SHIFT LEFT, SHIFT RIGHT     
+      case 17: ALT = !released; released = false; break;             // ALT, ALTGR
+      case 18: case 89: SHIFT = !released; released = false; break;  // SHIFT LEFT, SHIFT RIGHT     
+      case 20: CTRL = !released; released = false; break;            // CTRL LEFT, CTRL RIGHT
       case 240: released = true; break;                              // key release indicator
       default:                                                       // PROCESS ANY OTHER KEYS
+      {
         if (released == true) released = false;                      // ignore released keys
         else                                                         // key was pressed
         {
-          byte s=0; if (shift) s = 1; else if (alt) s = 2;           // select bank of lookup according the states of special keys
-          char p = pgm_read_byte(&LookupScanToASCII[s][scan & 127]);
-          if (p != 0) Serial.print(p);
+          switch (scan)
+          {
+            case 117: Serial.print("\e[A"); break;   // cursor up
+            case 114: Serial.print("\e[B"); break;   // cursor down
+            case 116: Serial.print("\e[C"); break;   // cursor right              
+            case 107: Serial.print("\e[D"); break;   // cursor left
+            case 108: Serial.print("\e[1~"); break;  // pos1 / home
+            case 105: Serial.print("\e[4~"); break;  // end
+            case 125: Serial.print("\e[5~"); break;  // page up
+            case 122: Serial.print("\e[6~"); break;  // page dn        
+            case 13: Serial.print("  "); break;       // TAB = 2 SPACES
+            default:
+            {
+              // select bank of lookup table according to the states of the special keys
+              byte s=0; if (SHIFT) s = 1; else if (ALT) s = 2; else if (CTRL) s = 3;
+              char p = pgm_read_byte(&LookupScanToASCII[s][scan & 127]);
+              if (p != 0) Serial.print(p);
+            }            
+          }
         }
         break;
+      }
     }  
   }  
 }
