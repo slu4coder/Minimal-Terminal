@@ -5,7 +5,6 @@
 // *****        written by Carsten Herting 24.03.2021 Version 2.1        *****
 // *****                                                                 *****
 // ***************************************************************************
-// Set AtMega328P FuseA from 0xFF to 0xF0 to enable external TTL clock
 // Pin C0-5: terminal input bits 0-5
 // Pin D0-7: parallel pixel output to 74166, in between: D6-7 terminal input bits 6-7
 // Pin B0:   CLKO ATmega328 system clock output
