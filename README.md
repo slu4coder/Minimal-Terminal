@@ -2,7 +2,7 @@
 
 This is my 'Minimal Serial UART Terminal' with a 50x30 character VGA display, PS2 keyboard readout (US, GER) and UART bitrates up to 500kbps. The design is based upon 2xATmega328P
 and is described here: https://www.youtube.com/watch?v=jR-SqXLgBNo
-This little gadget is ideally suited to be used together with the 'Minimal UART Computer 3': https://github.com/slu4coder/Minimal-UART-Computer-3
+This little gadget is now ideally suited to be used together with the 'Minimal UART Computer 3': https://github.com/slu4coder/Minimal-UART-Computer-3
 Augusto Baffa has added support for US-international keyboard map: https://github.com/abaffa/Minimal-Terminal
 
 Use a 20MHz crystal for a 50 x 30 characters display (default).
