@@ -12,7 +12,7 @@ Use a 20MHz crystal for a 50 x 30 characters display (default). The following ba
 
 From these, I have imlemented the following four baudrates as "selectable via jumper":
 
-<img width="559" height="219" alt="grafik" src="https://github.com/user-attachments/assets/f1b360b0-aacc-482a-9ef2-7cb0e383012c" />
+<img width="559" height="219" alt="grafik" src="https://github.com/user-attachments/assets/b69dac46-cf0f-458d-8890-93a509ee6c1c" />
 
 Please note that per default the "1" and "2" values are pulled up, resulting in the 3: 125kbps mode. A jumper between GND and 5V *turns off* a value, respectively.
 
