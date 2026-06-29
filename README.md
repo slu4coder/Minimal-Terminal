@@ -58,17 +58,27 @@ Upload the sketch into the TARGET with "Upload using Programmer", not the usual 
 
 Or use the serial upload connectors on the PCB with a breakout board if you've written a bootloader. Use a 16MHz crystal for programming.
 
+
 PROGRAMMER (UNO/NANO)     TARGET (ATmega328P)
-----------------------------------------------------
+
 D13 (SCK) <-------------> Pin 19
+
 D12 (MISO) <------------> Pin 18
+
 D11 (MOSI) <------------> Pin 17
+
 D10 (/RESET) <----------> Pin 1 <----- 10k ----> 5V
+
 5V <--------------------> Pin 7
+
 GND <-------------------> Pin 8
-                          Pin 9 <----- 22p ----> GND
-                          Pin 10 <---- 22p ----> GND
+
+						  Pin 9 <----- 22p ----> GND
+
+						  Pin 10 <---- 22p ----> GND
+
 Pin 9/10: 16MHz crystal required for programming
+
 
 o In case you write 0xF0 for external clock, the upload of the boot loader will not work,
 	until you provide an external clock to IC pin 9.
