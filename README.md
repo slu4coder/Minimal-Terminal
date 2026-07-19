@@ -28,6 +28,10 @@ drive passive crystals at this frequency without problems, newer lots may need a
 See the Manual 'Minimal UART Computer 3', section 'Native Tool Chain / Terminal' for more information:
 https://docs.google.com/document/d/1nIM-WRrVe7SzYY-DS1jcVHC4TCuIhlQ6LCHnZnEml7k/edit?usp=sharing
 
+If you like this project and want to give something back, you can do so via PayPal. Thanks!
+
+https://paypal.me/CarstenHerting
+
 # Preparing the ATmega328 ICs
 
 On a fresh ATmega328P, we set the low fuse byte from factory setting 0x62 (run on 8MHz internal oscillator) to
