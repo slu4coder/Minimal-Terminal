@@ -1,10 +1,12 @@
-# UPDATE 2026: Minimal Terminal
+# Minimal Terminal 2026
+
+This is my 'Minimal Serial UART Terminal' with a 50x30 character VGA display, PS2 keyboard readout (US, GER) and UART baudrates from 9600bps up to 500kbps. The design is based upon two ATmega328Ps and is described here: https://www.youtube.com/watch?v=jR-SqXLgBNo
 
 <img width="659" height="520" alt="grafik" src="https://github.com/user-attachments/assets/63a6b7e5-4117-4aff-9aae-75278a1ac7fb" />
 
-This is may 'Minimal Serial UART Terminal' with a 50x30 character VGA display, PS2 keyboard readout (US, GER) and UART baudrates from 9600bps up to 500kbps. The design is based upon two ATmega328Ps and is described here: https://www.youtube.com/watch?v=jR-SqXLgBNo
+This is a free and non-commercial project. I am in no way associated with any activies selling the 'Minimal Terminal' as a product. Any such activity represents a license violation. Individual licenses apply for hardware and software parts. Please refer to the applicable documentations for detailed licensing information. 
 
-This little gadget is now ideally suited to be used together with the 'Minimal UART Computer 3': https://github.com/slu4coder/Minimal-UART-Computer-3
+The Minimal Terminal is now ready to be used together with the 'Minimal UART Computer 3': https://github.com/slu4coder/Minimal-UART-Computer-3
 
 Augusto Baffa has added support for US-international keyboard map: https://github.com/abaffa/Minimal-Terminal
 
